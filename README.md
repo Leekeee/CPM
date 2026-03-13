@@ -19,13 +19,9 @@ A static tech news blog deployed on Netlify with automatic GitHub CI/CD. Every p
 
 ```
 your-repo/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml       # GitHub Actions workflow
 ├── site/
 │   └── index.html           # The full site (HTML + CSS + JS)
 ├── Dockerfile               # nginx-based Docker image (optional)
-├── fly.toml                 # Fly.io config (optional, kept for reference)
 ├── nginx.conf               # nginx config (optional)
 └── README.md
 ```
