@@ -1,105 +1,89 @@
-# Fly.io Multi-Region CI/CD — Setup Guide
+# BytePulse — Tech News Site
 
-## Prerequisites
-- [Fly.io account](https://fly.io) (free tier works)
-- [flyctl CLI](https://fly.io/docs/hands-on/install-flyctl/) installed locally
-- GitHub repository with this code
+A static tech news blog deployed on Netlify with automatic GitHub CI/CD. Every push to `main` triggers an instant redeploy. The site is served globally via Netlify's CDN covering US, UK, and EU automatically.
 
 ---
 
-## Step 1 — Create three Fly.io apps (one per region)
+## Tech Stack
 
-```bash
-# Login
-flyctl auth login
+| Layer | Tool |
+|---|---|
+| Site | Static HTML + CSS (single file) |
+| Hosting | Netlify (free tier) |
+| CI/CD | GitHub → Netlify (auto-deploy on push) |
+| Monetisation | Monetag Smartlink |
 
-# Create US app
-flyctl apps create your-app-name-us --machines
+---
 
-# Create UK app
-flyctl apps create your-app-name-uk --machines
+## Project Structure
 
-# Create EU app
-flyctl apps create your-app-name-eu --machines
+```
+your-repo/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml       # GitHub Actions workflow
+├── site/
+│   └── index.html           # The full site (HTML + CSS + JS)
+├── Dockerfile               # nginx-based Docker image (optional)
+├── fly.toml                 # Fly.io config (optional, kept for reference)
+├── nginx.conf               # nginx config (optional)
+└── README.md
 ```
 
 ---
 
-## Step 2 — Get your Fly.io API token
+## How Deployment Works
 
-```bash
-flyctl auth token
+1. You push code to the `main` branch on GitHub
+2. Netlify detects the push automatically
+3. Netlify pulls the `site/` folder and publishes it
+4. Site is live globally within seconds
+
+No build step, no Docker, no CLI needed.
+
+---
+
+## Netlify Setup (already done)
+
+- Connected GitHub repo to Netlify
+- Publish directory set to `site`
+- Auto-deploy on every push to `main` enabled
+- Free global CDN active (US, UK, EU covered)
+
+---
+
+## Adding Your Monetag Smartlink
+
+Open `site/index.html` and find every instance of:
+
+```
+YOUR_MONETAG_SMARTLINK_URL_HERE
 ```
 
-Copy the token — you'll need it in the next step.
+Replace all 14 occurrences with your actual Monetag smartlink URL. Every clickable element on the page routes through it including article cards, buttons, the ad banner, and the newsletter subscribe button.
 
 ---
 
-## Step 3 — Add GitHub Secrets
+## Making Changes
 
-In your GitHub repo go to **Settings → Secrets and variables → Actions** and add:
-
-| Secret name       | Value                          |
-|-------------------|-------------------------------|
-| `FLY_API_TOKEN`   | Your Fly.io API token          |
-| `FLY_APP_NAME`    | Your base app name (e.g. `mysite`) |
-
-> The workflow automatically appends `-us`, `-uk`, `-eu` to your base name.
-
----
-
-## Step 4 — Add your static site files
-
-Place your HTML/CSS/JS files inside the `site/` folder.
-
-If you have a build step (Vite, Next.js, etc.), edit the `Dockerfile` builder stage to run `npm run build` and copy from `dist/` instead of `site/`.
-
----
-
-## Step 5 — Push and deploy
+To update the site:
 
 ```bash
+# Edit site/index.html
 git add .
-git commit -m "Initial deploy"
+git commit -m "Update content"
 git push origin main
 ```
 
-GitHub Actions will:
-1. Build the multi-stage Docker image
-2. Push to Fly.io's private registry
-3. Deploy to US, UK, and EU in parallel
-4. Run health checks on all three regions
+Netlify will automatically redeploy within 30 seconds.
 
 ---
 
-## Deployed URLs
+## Live Site
 
-| Region | URL |
-|--------|-----|
-| US     | `https://your-app-name-us.fly.dev` |
-| UK     | `https://your-app-name-uk.fly.dev` |
-| EU     | `https://your-app-name-eu.fly.dev` |
+Your site is live at your Netlify URL. To find it:
+1. Go to [netlify.com](https://netlify.com)
+2. Open your site dashboard
+3. The URL is shown at the top (e.g. `https://your-site-name.netlify.app`)
 
----
-
-## Image size
-
-The multi-stage build keeps the final image small:
-- Builder stage (Node 20 Alpine): ~170MB — discarded after build
-- Runtime stage (nginx Alpine): ~25MB — this is what gets deployed
-
----
-
-## Scaling up
-
-To add more machines per region:
-
-```bash
-flyctl scale count 2 --app your-app-name-us --region iad
-```
-
-To add an extra EU location (e.g. Frankfurt):
-
-```bash
-flyctl regions add fra --app your-app-name-eu
-```
+You can add a custom domain for free via **Site configuration → Domain management**.
